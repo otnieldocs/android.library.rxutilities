@@ -1,0 +1,22 @@
+ext {
+    apply from: "$rootDir/versions.gradle"
+
+    core = [
+            kotlinStdLib: ("org.jetbrains.kotlin:kotlin-stdlib:$version_kotlin"),
+            coreKtx: ("androidx.core:core-ktx:$version_androidx_core"),
+            appCompat: ("androidx.appcompat:appcompat:$version_androidx_appcompat"),
+            constraintLayout: ("androidx.constraintlayout:constraintlayout:$version_androidx_constraintlayout"),
+            googleMaterial: ("com.google.android.material:material:$version_google_material")
+    ]
+
+    testing = [
+            junit: ("junit:junit:$version_test_junit"),
+            extJunit: ("androidx.test.ext:junit:$version_test_extjunit"),
+            espresso: ("androidx.test.espresso:espresso-core:$version_test_espresso")
+    ]
+
+    rxjava = [
+            rxJava: ("io.reactivex.rxjava2:rxjava:$version_rxjava"),
+            rxJavaAndroid: ("io.reactivex.rxjava2:rxandroid:$version_rxjava_android")
+    ]
+}

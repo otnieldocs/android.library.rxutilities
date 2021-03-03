@@ -1,0 +1,26 @@
+ext {
+    // project dependencies version
+    version_kotlin = "1.3.72"
+    version_gradle = "4.1.1"
+
+    // base dependencies version
+    version_build_tools                 = "29.0.3"
+    version_min_sdk                     = 21
+    version_target_sdk                  = 29
+    version_compile_sdk                 = 29
+
+    // core dependencies version
+    version_androidx_core               = "1.3.0"
+    version_androidx_appcompat          = "1.1.0"
+    version_androidx_constraintlayout   = "1.1.3"
+    version_google_material             = "1.2.0"
+
+    // testing dependencies version
+    version_test_junit                  = "4.13.1"
+    version_test_extjunit               = "1.1.1"
+    version_test_espresso               = "3.2.0"
+
+    // rxjava dependencies version
+    version_rxjava                      = "2.2.8"
+    version_rxjava_android              = "2.1.1"
+}
