@@ -1,2 +1,3 @@
+include ':rxutilities'
 include ':app'
 rootProject.name = "android.library.rxutilities"
