@@ -3,6 +3,7 @@ buildscript {
     apply from: "$rootDir/versions.gradle"
     ext {
         version_kotlin = '1.3.72'
+        kotlin_version = '1.3.72'
     }
     repositories {
         google()

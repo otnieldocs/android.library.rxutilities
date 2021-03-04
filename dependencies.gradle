@@ -19,4 +19,9 @@ ext {
             rxJava: ("io.reactivex.rxjava2:rxjava:$version_rxjava"),
             rxJavaAndroid: ("io.reactivex.rxjava2:rxandroid:$version_rxjava_android")
     ]
+
+    androidxadd = [
+            xactivity: ("androidx.activity:activity-ktx:$version_androidx_activity"),
+            xfragment: ("androidx.fragment:fragment-ktx:$version_androidx_fragment")
+    ]
 }
