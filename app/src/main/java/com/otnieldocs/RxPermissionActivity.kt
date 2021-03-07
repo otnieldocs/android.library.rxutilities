@@ -10,7 +10,6 @@ import com.otnieldocs.rxutilities.RxPermissionRequest
 import com.otnieldocs.rxutilities.Success
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
 
 class RxPermissionActivity : AppCompatActivity() {
     private val disposable = CompositeDisposable()
@@ -37,16 +36,19 @@ class RxPermissionActivity : AppCompatActivity() {
                 }.show()
             }
                 .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe { result ->
-                    when (result) {
-                        is Success -> {
-                            Log.d("RX_PERMISSION", "The result is ${result.data}")
+                .subscribe(
+                    { result ->
+                        when (result) {
+                            is Success -> {
+                                Log.d("RX_PERMISSION", "The result is ${result.data}")
+                            }
+                            else -> {
+                                Log.d("RX_PERMISSION", "Permission denied")
+                            }
                         }
-                        else -> {
-                            Log.d("RX_PERMISSION", "Permission denied")
-                        }
-                    }
-                }
+                    }, {
+                        Log.d("RX_PERMISSION", "Throws ${it.message}")
+                    })
 
         disposable.add(subscribed)
     }
