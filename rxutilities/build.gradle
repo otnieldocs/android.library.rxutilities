@@ -47,6 +47,9 @@ dependencies {
     implementation rxjava.rxJava
     implementation rxjava.rxJavaAndroid
 
+    implementation androidxadd.xactivity
+    implementation androidxadd.xfragment
+
     testImplementation testing.junit
     androidTestImplementation testing.extJunit
     androidTestImplementation testing.espresso
