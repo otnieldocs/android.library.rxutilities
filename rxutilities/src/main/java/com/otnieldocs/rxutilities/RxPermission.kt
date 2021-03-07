@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import io.reactivex.Observable
-import io.reactivex.subjects.PublishSubject
 import io.reactivex.subjects.ReplaySubject
 
 class RxPermission {
@@ -21,7 +20,7 @@ class RxPermission {
     fun singleRequest(
         request: RxPermissionRequest,
         activity: AppCompatActivity,
-        bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null
+        bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
     ): Observable<RxResult<String>> {
         val fragmentManager = activity.supportFragmentManager
         val fragment = HeadlessFragment.newInstance(request, bindRationaleDialog)
@@ -32,12 +31,12 @@ class RxPermission {
 
     class HeadlessFragment : Fragment {
         private val requestedPermissions = mutableListOf<RxPermissionRequest>()
-        private var bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null
+        private var bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
 
         @JvmOverloads
         constructor(
             request: RxPermissionRequest,
-            bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null
+            bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
         ) {
             with(requestedPermissions) {
                 clear()
@@ -50,7 +49,7 @@ class RxPermission {
         @JvmOverloads
         constructor(
             requests: List<RxPermissionRequest>,
-            bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null
+            bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
         ) {
             with(requestedPermissions) {
                 clear()
@@ -94,7 +93,7 @@ class RxPermission {
         @RequiresApi(Build.VERSION_CODES.M)
         private fun singlePermissionSdk23Above(context: Context) {
             when {
-                requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException("Invalid request"))
+                requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
 
                 ContextCompat.checkSelfPermission(
                     context,
@@ -117,8 +116,7 @@ class RxPermission {
                                 "Yes"
                             ) { _, _ -> launchSinglePermissionLauncher() }
                         }.show()
-                    }
-                    else {
+                    } else {
                         bindRationaleDialog?.invoke { launchSinglePermissionLauncher() }
                     }
                 }
@@ -131,14 +129,13 @@ class RxPermission {
 
         private fun singlePermissionSdk23Below(context: Context) {
             when {
-                requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException("Invalid request"))
+                requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
 
                 ContextCompat.checkSelfPermission(
                     context,
                     Manifest.permission.CAMERA
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     with(publisher) {
-                        timeInterval()
                         onNext(Success(GRANTED))
                         onComplete()
                     }
@@ -159,13 +156,20 @@ class RxPermission {
         companion object {
             const val GRANTED = "GRANTED"
             const val DENIED = "DENIED"
+            const val INVALID = "INVALID"
 
             @JvmStatic
-            fun newInstance(request: RxPermissionRequest, bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null): HeadlessFragment =
+            fun newInstance(
+                request: RxPermissionRequest,
+                bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
+            ): HeadlessFragment =
                 HeadlessFragment(request, bindRationaleDialog)
 
             @JvmStatic
-            fun newInstance(requests: List<RxPermissionRequest>, bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null): HeadlessFragment =
+            fun newInstance(
+                requests: List<RxPermissionRequest>,
+                bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
+            ): HeadlessFragment =
                 HeadlessFragment(requests, bindRationaleDialog)
         }
     }
