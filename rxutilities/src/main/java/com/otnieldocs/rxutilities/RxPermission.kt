@@ -13,15 +13,18 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
+import io.reactivex.subjects.ReplaySubject
 
 class RxPermission {
 
+
     fun singleRequest(
         request: RxPermissionRequest,
-        activity: AppCompatActivity
+        activity: AppCompatActivity,
+        bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null
     ): Observable<RxResult<String>> {
         val fragmentManager = activity.supportFragmentManager
-        val fragment = HeadlessFragment.newInstance(request)
+        val fragment = HeadlessFragment.newInstance(request, bindRationaleDialog)
         fragmentManager.beginTransaction().add(fragment, HeadlessFragment::class.java.simpleName)
             .commitNow()
         return fragment.getPublisher()
@@ -29,24 +32,35 @@ class RxPermission {
 
     class HeadlessFragment : Fragment {
         private val requestedPermissions = mutableListOf<RxPermissionRequest>()
+        private var bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null
 
         @JvmOverloads
-        constructor(request: RxPermissionRequest) {
+        constructor(
+            request: RxPermissionRequest,
+            bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null
+        ) {
             with(requestedPermissions) {
                 clear()
                 add(request)
             }
+
+            this.bindRationaleDialog = bindRationaleDialog
         }
 
         @JvmOverloads
-        constructor(requests: List<RxPermissionRequest>) {
+        constructor(
+            requests: List<RxPermissionRequest>,
+            bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null
+        ) {
             with(requestedPermissions) {
                 clear()
                 addAll(requests)
             }
+
+            this.bindRationaleDialog = bindRationaleDialog
         }
 
-        private val publisher = PublishSubject.create<RxResult<String>>()
+        private val publisher = ReplaySubject.create<RxResult<String>>()
 
         private val requestPermissionLauncher =
             registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -84,7 +98,7 @@ class RxPermission {
 
                 ContextCompat.checkSelfPermission(
                     context,
-                    Manifest.permission.CAMERA
+                    requestedPermissions.first().permission
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     with(publisher) {
                         onNext(Success(GRANTED))
@@ -95,16 +109,22 @@ class RxPermission {
                 shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
                     // show yes no dialog. If user choose yes, then call requestPermissionLauncher.launch(permission)
                     // otherwise, show to the user popup info that explain the effect to the apps by rejecting them
-                    AlertDialog.Builder(context).apply {
-                        setMessage(requestedPermissions.first().rationaleMessage)
-                        setPositiveButton(
-                            "Yes"
-                        ) { _, _ -> launchPermissionLauncher() }
-                    }.show()
+
+                    if (bindRationaleDialog == null) {
+                        AlertDialog.Builder(context).apply {
+                            setMessage(requestedPermissions.first().rationaleMessage)
+                            setPositiveButton(
+                                "Yes"
+                            ) { _, _ -> launchSinglePermissionLauncher() }
+                        }.show()
+                    }
+                    else {
+                        bindRationaleDialog?.invoke { launchSinglePermissionLauncher() }
+                    }
                 }
 
                 else -> {
-                    launchPermissionLauncher()
+                    launchSinglePermissionLauncher()
                 }
             }
         }
@@ -118,20 +138,21 @@ class RxPermission {
                     Manifest.permission.CAMERA
                 ) == PackageManager.PERMISSION_GRANTED -> {
                     with(publisher) {
+                        timeInterval()
                         onNext(Success(GRANTED))
                         onComplete()
                     }
                 }
 
                 else -> {
-                    launchPermissionLauncher()
+                    launchSinglePermissionLauncher()
                 }
             }
         }
 
-        private fun launchPermissionLauncher() {
+        private fun launchSinglePermissionLauncher() {
             requestPermissionLauncher.launch(
-                Manifest.permission.CAMERA
+                requestedPermissions.first().permission
             )
         }
 
@@ -140,12 +161,12 @@ class RxPermission {
             const val DENIED = "DENIED"
 
             @JvmStatic
-            fun newInstance(request: RxPermissionRequest): HeadlessFragment =
-                HeadlessFragment(request)
+            fun newInstance(request: RxPermissionRequest, bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null): HeadlessFragment =
+                HeadlessFragment(request, bindRationaleDialog)
 
             @JvmStatic
-            fun newInstance(requests: List<RxPermissionRequest>): HeadlessFragment =
-                HeadlessFragment(requests)
+            fun newInstance(requests: List<RxPermissionRequest>, bindRationaleDialog: (( doRequest: () -> Unit ) -> Unit)? = null): HeadlessFragment =
+                HeadlessFragment(requests, bindRationaleDialog)
         }
     }
 }
