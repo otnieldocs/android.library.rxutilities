@@ -109,22 +109,28 @@ class RxPermission {
         }
 
         private fun recheckPermissionSdk23Below(context: Context) {
-            when {
-                requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
+            val shouldRequested = mutableListOf<RxPermissionRequest>()
+            for (request in requestedPermissions) {
+                when {
+                    requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
 
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.CAMERA
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    with(publisher) {
-                        onNext(Success(GRANTED))
-                        onComplete()
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        request.permission
+                    ) == PackageManager.PERMISSION_GRANTED -> {
+                        publisher.onNext(Success(request.permission))
+                    }
+
+                    else -> {
+                        shouldRequested.add(request)
                     }
                 }
+            }
 
-                else -> {
-                    launchPermissionLauncher(requestedPermissions)
-                }
+            publisher.onComplete()
+
+            if (shouldRequested.isNotEmpty()) {
+                launchPermissionLauncher(shouldRequested)
             }
         }
 
