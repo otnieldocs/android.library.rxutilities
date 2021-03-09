@@ -16,74 +16,61 @@ import io.reactivex.subjects.ReplaySubject
 
 class RxPermission {
 
-
-    fun singleRequest(
-        request: RxPermissionRequest,
+    fun request(
+        requests: List<RxPermissionRequest>,
         activity: AppCompatActivity
     ): Observable<RxResult<String>> {
         val fragmentManager = activity.supportFragmentManager
-        val fragment = HeadlessFragment.newInstance(request)
+        val fragment = HeadlessFragment.newInstance(requests)
         fragmentManager.beginTransaction().add(fragment, HeadlessFragment::class.java.simpleName)
             .commitNow()
         return fragment.getPublisher()
     }
 
-    class HeadlessFragment : Fragment {
+    class HeadlessFragment(requests: List<RxPermissionRequest>) : Fragment() {
         private val requestedPermissions = mutableListOf<RxPermissionRequest>()
 
-        @JvmOverloads
-        constructor(
-            request: RxPermissionRequest
-        ) {
-            with(requestedPermissions) {
-                clear()
-                add(request)
-            }
-        }
+        private val publisher = ReplaySubject.create<RxResult<String>>()
 
-        @JvmOverloads
-        constructor(
-            requests: List<RxPermissionRequest>
-        ) {
+        private val requestPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+                for (request in requestedPermissions) {
+                    val isGranted = results[request.permission] ?: false
+
+                    if (isGranted) publisher.onNext(Success(GRANTED))
+                    else publisher.onNext(Failed(RxPermissionException(DENIED)))
+                }
+
+                publisher.onComplete()
+            }
+
+        init {
             with(requestedPermissions) {
                 clear()
                 addAll(requests)
             }
         }
 
-        private val publisher = ReplaySubject.create<RxResult<String>>()
-
-        private val requestPermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-                if (isGranted) {
-                    publisher.onNext(Success(GRANTED))
-                } else {
-                    publisher.onNext(Failed(RxPermissionException(DENIED)))
-                }
-
-                publisher.onComplete()
-            }
-
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
 
-            context?.let { singlePermission(it) }
+            context?.let { permission(it) }
         }
 
         fun getPublisher() = publisher
 
-        private fun singlePermission(context: Context) {
+        private fun permission(context: Context) {
 
             when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
-                    singlePermissionSdk23Above(context)
+                    permissionSdk23Above(context)
                 }
-                else -> singlePermissionSdk23Below(context)
+                else -> permissionSdk23Below(context)
             }
         }
 
         @RequiresApi(Build.VERSION_CODES.M)
-        private fun singlePermissionSdk23Above(context: Context) {
+        private fun permissionSdk23Above(context: Context) {
             when {
                 requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
 
@@ -105,17 +92,17 @@ class RxPermission {
                         setMessage(requestedPermissions.first().rationaleMessage)
                         setPositiveButton(
                             "Yes"
-                        ) { _, _ -> launchSinglePermissionLauncher() }
+                        ) { _, _ -> launchPermissionLauncher() }
                     }.show()
                 }
 
                 else -> {
-                    launchSinglePermissionLauncher()
+                    launchPermissionLauncher()
                 }
             }
         }
 
-        private fun singlePermissionSdk23Below(context: Context) {
+        private fun permissionSdk23Below(context: Context) {
             when {
                 requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
 
@@ -130,14 +117,16 @@ class RxPermission {
                 }
 
                 else -> {
-                    launchSinglePermissionLauncher()
+                    launchPermissionLauncher()
                 }
             }
         }
 
-        private fun launchSinglePermissionLauncher() {
+        private fun launchPermissionLauncher() {
             requestPermissionLauncher.launch(
-                requestedPermissions.first().permission
+                requestedPermissions.map {
+                    it.permission
+                }.toTypedArray()
             )
         }
 
@@ -145,12 +134,6 @@ class RxPermission {
             const val GRANTED = "GRANTED"
             const val DENIED = "DENIED"
             const val INVALID = "INVALID"
-
-            @JvmStatic
-            fun newInstance(
-                request: RxPermissionRequest
-            ): HeadlessFragment =
-                HeadlessFragment(request)
 
             @JvmStatic
             fun newInstance(

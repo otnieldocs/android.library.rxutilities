@@ -15,14 +15,16 @@ class RxPermissionActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_rx_permission)
 
-        val requestPermission = RxPermissionRequest(
-            permission = Manifest.permission.CAMERA,
-            rationaleMessage = "You need to allow camera permission to use this feature"
+        val requestPermission = listOf(
+            RxPermissionRequest(
+                permission = Manifest.permission.CAMERA,
+                rationaleMessage = "You need to allow camera permission to use this feature"
+            )
         )
 
         val permission = RxPermission()
         val subscribed =
-            permission.singleRequest(requestPermission, this)
+            permission.request(requestPermission, this)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     { result ->
