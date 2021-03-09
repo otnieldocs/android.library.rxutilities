@@ -19,11 +19,10 @@ class RxPermission {
 
     fun singleRequest(
         request: RxPermissionRequest,
-        activity: AppCompatActivity,
-        bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
+        activity: AppCompatActivity
     ): Observable<RxResult<String>> {
         val fragmentManager = activity.supportFragmentManager
-        val fragment = HeadlessFragment.newInstance(request, bindRationaleDialog)
+        val fragment = HeadlessFragment.newInstance(request)
         fragmentManager.beginTransaction().add(fragment, HeadlessFragment::class.java.simpleName)
             .commitNow()
         return fragment.getPublisher()
@@ -31,32 +30,25 @@ class RxPermission {
 
     class HeadlessFragment : Fragment {
         private val requestedPermissions = mutableListOf<RxPermissionRequest>()
-        private var bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
 
         @JvmOverloads
         constructor(
-            request: RxPermissionRequest,
-            bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
+            request: RxPermissionRequest
         ) {
             with(requestedPermissions) {
                 clear()
                 add(request)
             }
-
-            this.bindRationaleDialog = bindRationaleDialog
         }
 
         @JvmOverloads
         constructor(
-            requests: List<RxPermissionRequest>,
-            bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
+            requests: List<RxPermissionRequest>
         ) {
             with(requestedPermissions) {
                 clear()
                 addAll(requests)
             }
-
-            this.bindRationaleDialog = bindRationaleDialog
         }
 
         private val publisher = ReplaySubject.create<RxResult<String>>()
@@ -109,16 +101,12 @@ class RxPermission {
                     // show yes no dialog. If user choose yes, then call requestPermissionLauncher.launch(permission)
                     // otherwise, show to the user popup info that explain the effect to the apps by rejecting them
 
-                    if (bindRationaleDialog == null) {
-                        AlertDialog.Builder(context).apply {
-                            setMessage(requestedPermissions.first().rationaleMessage)
-                            setPositiveButton(
-                                "Yes"
-                            ) { _, _ -> launchSinglePermissionLauncher() }
-                        }.show()
-                    } else {
-                        bindRationaleDialog?.invoke { launchSinglePermissionLauncher() }
-                    }
+                    AlertDialog.Builder(context).apply {
+                        setMessage(requestedPermissions.first().rationaleMessage)
+                        setPositiveButton(
+                            "Yes"
+                        ) { _, _ -> launchSinglePermissionLauncher() }
+                    }.show()
                 }
 
                 else -> {
@@ -160,17 +148,15 @@ class RxPermission {
 
             @JvmStatic
             fun newInstance(
-                request: RxPermissionRequest,
-                bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
+                request: RxPermissionRequest
             ): HeadlessFragment =
-                HeadlessFragment(request, bindRationaleDialog)
+                HeadlessFragment(request)
 
             @JvmStatic
             fun newInstance(
-                requests: List<RxPermissionRequest>,
-                bindRationaleDialog: ((doRequest: () -> Unit) -> Unit)? = null
+                requests: List<RxPermissionRequest>
             ): HeadlessFragment =
-                HeadlessFragment(requests, bindRationaleDialog)
+                HeadlessFragment(requests)
         }
     }
 }

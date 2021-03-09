@@ -3,11 +3,8 @@ package com.otnieldocs
 import android.Manifest
 import android.os.Bundle
 import android.util.Log
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.otnieldocs.rxutilities.RxPermission
-import com.otnieldocs.rxutilities.RxPermissionRequest
-import com.otnieldocs.rxutilities.Success
+import com.otnieldocs.rxutilities.*
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 
@@ -25,16 +22,7 @@ class RxPermissionActivity : AppCompatActivity() {
 
         val permission = RxPermission()
         val subscribed =
-            permission.singleRequest(requestPermission, this) { doRequest ->
-                AlertDialog.Builder(this).apply {
-                    setMessage(requestPermission.rationaleMessage)
-                    setPositiveButton(
-                        "Yes"
-                    ) { _, _ ->
-                        doRequest.invoke()
-                    }
-                }.show()
-            }
+            permission.singleRequest(requestPermission, this)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                     { result ->
@@ -42,8 +30,14 @@ class RxPermissionActivity : AppCompatActivity() {
                             is Success -> {
                                 Log.d("RX_PERMISSION", "The result is ${result.data}")
                             }
-                            else -> {
-                                Log.d("RX_PERMISSION", "Permission denied")
+                            is Failed -> {
+                                Log.d(
+                                    "RX_PERMISSION",
+                                    "Permission denied ${result.exception.message}"
+                                )
+                            }
+                            is Error -> {
+                                Log.d("RX_PERMISSION", "Some error occurred")
                             }
                         }
                     }, {
