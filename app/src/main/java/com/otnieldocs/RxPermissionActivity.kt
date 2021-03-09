@@ -19,6 +19,10 @@ class RxPermissionActivity : AppCompatActivity() {
             RxPermissionRequest(
                 permission = Manifest.permission.CAMERA,
                 rationaleMessage = "You need to allow camera permission to use this feature"
+            ),
+            RxPermissionRequest(
+                permission = Manifest.permission.READ_CONTACTS,
+                rationaleMessage = "You need to allow camera permission to use this feature"
             )
         )
 
@@ -32,13 +36,16 @@ class RxPermissionActivity : AppCompatActivity() {
                             is Success -> {
                                 Log.d("RX_PERMISSION", "The result is ${result.data}")
                             }
-                            is Failed -> {
+                            is Rationale -> {
+                                Log.d("RX_PERMISSION", "You need to turn on ${result.data} permission")
+                            }
+                            is Denied -> {
                                 Log.d(
                                     "RX_PERMISSION",
                                     "Permission denied ${result.exception.message}"
                                 )
                             }
-                            is Error -> {
+                            is Failed -> {
                                 Log.d("RX_PERMISSION", "Some error occurred")
                             }
                         }

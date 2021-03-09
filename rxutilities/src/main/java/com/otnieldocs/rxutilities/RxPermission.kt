@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -38,7 +37,7 @@ class RxPermission {
                     val isGranted = results[request.permission] ?: false
 
                     if (isGranted) publisher.onNext(Success(GRANTED))
-                    else publisher.onNext(Failed(RxPermissionException(DENIED)))
+                    else publisher.onNext(Denied(RxPermissionException(DENIED)))
                 }
 
                 publisher.onComplete()
@@ -54,55 +53,62 @@ class RxPermission {
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
 
-            context?.let { permission(it) }
+            context?.let { recheckPermission(it) }
         }
 
         fun getPublisher() = publisher
 
-        private fun permission(context: Context) {
+        private fun recheckPermission(context: Context) {
 
             when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
-                    permissionSdk23Above(context)
+                    recheckPermissionSdk23Above(context)
                 }
-                else -> permissionSdk23Below(context)
+                else -> recheckPermissionSdk23Below(context)
             }
         }
 
         @RequiresApi(Build.VERSION_CODES.M)
-        private fun permissionSdk23Above(context: Context) {
-            when {
-                requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
+        private fun recheckPermissionSdk23Above(context: Context) {
+            val shouldRequested = mutableListOf<RxPermissionRequest>()
+            for (request in requestedPermissions) {
+                when {
+                    requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
 
-                ContextCompat.checkSelfPermission(
-                    context,
-                    requestedPermissions.first().permission
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    with(publisher) {
-                        onNext(Success(GRANTED))
-                        onComplete()
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        request.permission
+                    ) == PackageManager.PERMISSION_GRANTED -> {
+                        publisher.onNext(Success(request.permission))
+                    }
+
+                    shouldShowRequestPermissionRationale(request.permission) -> {
+                        // show yes no dialog. If user choose yes, then call requestPermissionLauncher.launch(permission)
+                        // otherwise, show to the user popup info that explain the effect to the apps by rejecting them
+
+//                        AlertDialog.Builder(context).apply {
+//                            setMessage(requestedPermissions.first().rationaleMessage)
+//                            setPositiveButton(
+//                                "Yes"
+//                            ) { _, _ -> launchPermissionLauncher() }
+//                        }.show()
+                        publisher.onNext(Rationale(request.permission))
+                    }
+
+                    else -> {
+                        shouldRequested.add(request)
                     }
                 }
+            }
 
-                shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
-                    // show yes no dialog. If user choose yes, then call requestPermissionLauncher.launch(permission)
-                    // otherwise, show to the user popup info that explain the effect to the apps by rejecting them
+            publisher.onComplete()
 
-                    AlertDialog.Builder(context).apply {
-                        setMessage(requestedPermissions.first().rationaleMessage)
-                        setPositiveButton(
-                            "Yes"
-                        ) { _, _ -> launchPermissionLauncher() }
-                    }.show()
-                }
-
-                else -> {
-                    launchPermissionLauncher()
-                }
+            if (shouldRequested.isNotEmpty()) {
+                launchPermissionLauncher(shouldRequested)
             }
         }
 
-        private fun permissionSdk23Below(context: Context) {
+        private fun recheckPermissionSdk23Below(context: Context) {
             when {
                 requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
 
@@ -117,14 +123,14 @@ class RxPermission {
                 }
 
                 else -> {
-                    launchPermissionLauncher()
+                    launchPermissionLauncher(requestedPermissions)
                 }
             }
         }
 
-        private fun launchPermissionLauncher() {
+        private fun launchPermissionLauncher(requests: List<RxPermissionRequest>) {
             requestPermissionLauncher.launch(
-                requestedPermissions.map {
+                requests.map {
                     it.permission
                 }.toTypedArray()
             )
