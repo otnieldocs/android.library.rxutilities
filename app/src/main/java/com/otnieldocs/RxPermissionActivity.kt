@@ -33,7 +33,7 @@ class RxPermissionActivity : AppCompatActivity() {
                 .subscribe(
                     { result ->
                         when (result) {
-                            is Success -> {
+                            is Granted -> {
                                 Log.d("RX_PERMISSION", "The result is ${result.data}")
                             }
                             is Rationale -> {

@@ -1,6 +1,5 @@
 package com.otnieldocs.rxutilities
 
-import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -18,7 +17,7 @@ class RxPermission {
     fun request(
         requests: List<RxPermissionRequest>,
         activity: AppCompatActivity
-    ): Observable<RxResult<String>> {
+    ): Observable<RxResult<List<String>>> {
         val fragmentManager = activity.supportFragmentManager
         val fragment = HeadlessFragment.newInstance(requests)
         fragmentManager.beginTransaction().add(fragment, HeadlessFragment::class.java.simpleName)
@@ -28,16 +27,27 @@ class RxPermission {
 
     class HeadlessFragment(requests: List<RxPermissionRequest>) : Fragment() {
         private val requestedPermissions = mutableListOf<RxPermissionRequest>()
+        private val permissionSuccess = mutableListOf<String>()
+        private val permissionRationale = mutableListOf<String>()
+        private val permissionDenied = mutableListOf<String>()
 
-        private val publisher = ReplaySubject.create<RxResult<String>>()
+        private val publisher = ReplaySubject.create<RxResult<List<String>>>()
 
         private val requestPermissionLauncher =
             registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
                 for (request in requestedPermissions) {
                     val isGranted = results[request.permission] ?: false
 
-                    if (isGranted) publisher.onNext(Success(GRANTED))
-                    else publisher.onNext(Denied(RxPermissionException(DENIED)))
+                    if (isGranted) permissionSuccess.add(request.permission) // publisher.onNext(Success(GRANTED))
+                    else permissionDenied.add(request.permission)  // publisher.onNext(Denied(RxPermissionException(DENIED)))
+                }
+
+                if (permissionSuccess.isNotEmpty()) {
+                    publisher.onNext(Granted(permissionSuccess))
+                }
+
+                if (permissionDenied.isNotEmpty()) {
+                    publisher.onNext(Denied(RxPermissionException(DENIED, permissionDenied)))
                 }
 
                 publisher.onComplete()
@@ -79,26 +89,27 @@ class RxPermission {
                         context,
                         request.permission
                     ) == PackageManager.PERMISSION_GRANTED -> {
-                        publisher.onNext(Success(request.permission))
+                        // publisher.onNext(Success(request.permission))
+                        permissionSuccess.add(request.permission)
                     }
 
                     shouldShowRequestPermissionRationale(request.permission) -> {
-                        // show yes no dialog. If user choose yes, then call requestPermissionLauncher.launch(permission)
-                        // otherwise, show to the user popup info that explain the effect to the apps by rejecting them
-
-//                        AlertDialog.Builder(context).apply {
-//                            setMessage(requestedPermissions.first().rationaleMessage)
-//                            setPositiveButton(
-//                                "Yes"
-//                            ) { _, _ -> launchPermissionLauncher() }
-//                        }.show()
-                        publisher.onNext(Rationale(request.permission))
+                        // publisher.onNext(Rationale(request.permission))
+                        permissionRationale.add(request.permission)
                     }
 
                     else -> {
                         shouldRequested.add(request)
                     }
                 }
+            }
+
+            if (permissionSuccess.isNotEmpty()) {
+                publisher.onNext(Granted(permissionSuccess))
+            }
+
+            if (permissionRationale.isNotEmpty()) {
+                publisher.onNext(Rationale(permissionRationale))
             }
 
             publisher.onComplete()
@@ -118,13 +129,18 @@ class RxPermission {
                         context,
                         request.permission
                     ) == PackageManager.PERMISSION_GRANTED -> {
-                        publisher.onNext(Success(request.permission))
+                        // publisher.onNext(Success(request.permission))
+                        permissionSuccess.add(request.permission)
                     }
 
                     else -> {
                         shouldRequested.add(request)
                     }
                 }
+            }
+
+            if (permissionSuccess.isNotEmpty()) {
+                publisher.onNext(Granted(permissionSuccess))
             }
 
             publisher.onComplete()
