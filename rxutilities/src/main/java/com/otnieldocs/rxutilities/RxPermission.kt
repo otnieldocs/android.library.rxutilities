@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -27,8 +28,8 @@ class RxPermission {
 
     class HeadlessFragment(requests: List<RxPermissionRequest>) : Fragment() {
         private val requestedPermissions = mutableListOf<RxPermissionRequest>()
+        private val requestRationale = mutableListOf<RxPermissionRequest>()
         private val permissionSuccess = mutableListOf<String>()
-        private val permissionRationale = mutableListOf<String>()
         private val permissionDenied = mutableListOf<String>()
 
         private val publisher = ReplaySubject.create<RxResult<List<String>>>()
@@ -38,8 +39,8 @@ class RxPermission {
                 for (request in requestedPermissions) {
                     val isGranted = results[request.permission] ?: false
 
-                    if (isGranted) permissionSuccess.add(request.permission) // publisher.onNext(Success(GRANTED))
-                    else permissionDenied.add(request.permission)  // publisher.onNext(Denied(RxPermissionException(DENIED)))
+                    if (isGranted) permissionSuccess.add(request.permission)
+                    else permissionDenied.add(request.permission)
                 }
 
                 if (permissionSuccess.isNotEmpty()) {
@@ -72,30 +73,31 @@ class RxPermission {
 
             when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> {
-                    recheckPermissionSdk23Above(context)
+                    recheckPermissionSdk23Above(context, requestedPermissions)
                 }
                 else -> recheckPermissionSdk23Below(context)
             }
         }
 
         @RequiresApi(Build.VERSION_CODES.M)
-        private fun recheckPermissionSdk23Above(context: Context) {
+        private fun recheckPermissionSdk23Above(context: Context, requests: List<RxPermissionRequest>) {
+            permissionSuccess.clear()
+            requestRationale.clear()
+
             val shouldRequested = mutableListOf<RxPermissionRequest>()
-            for (request in requestedPermissions) {
+            for (request in requests) {
                 when {
-                    requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
+                    requests.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
 
                     ContextCompat.checkSelfPermission(
                         context,
                         request.permission
                     ) == PackageManager.PERMISSION_GRANTED -> {
-                        // publisher.onNext(Success(request.permission))
                         permissionSuccess.add(request.permission)
                     }
 
                     shouldShowRequestPermissionRationale(request.permission) -> {
-                        // publisher.onNext(Rationale(request.permission))
-                        permissionRationale.add(request.permission)
+                        requestRationale.add(request)
                     }
 
                     else -> {
@@ -106,17 +108,35 @@ class RxPermission {
 
             if (permissionSuccess.isNotEmpty()) {
                 publisher.onNext(Granted(permissionSuccess))
+                publisher.onComplete()
             }
 
-            if (permissionRationale.isNotEmpty()) {
-                publisher.onNext(Rationale(permissionRationale))
-            }
+            if (requestRationale.isNotEmpty()) {
+                val rationaleMessage = getRationaleMessage(requestRationale)
 
-            publisher.onComplete()
+                AlertDialog.Builder(context).apply {
+                    setMessage("You should allow these permissions:\n${rationaleMessage}")
+                    setPositiveButton(
+                        "Yes"
+                    ) { _, _ ->
+                        launchPermissionLauncher(requestedPermissions)
+                    }
+                }.show()
+            }
 
             if (shouldRequested.isNotEmpty()) {
                 launchPermissionLauncher(shouldRequested)
             }
+        }
+
+        private fun getRationaleMessage(rationaleRequests: List<RxPermissionRequest>): String {
+            var message = ""
+
+            for (rationale in rationaleRequests) {
+                message = message.plus("${rationale.permission}\n")
+            }
+
+            return message
         }
 
         private fun recheckPermissionSdk23Below(context: Context) {
@@ -129,7 +149,6 @@ class RxPermission {
                         context,
                         request.permission
                     ) == PackageManager.PERMISSION_GRANTED -> {
-                        // publisher.onNext(Success(request.permission))
                         permissionSuccess.add(request.permission)
                     }
 
@@ -159,7 +178,6 @@ class RxPermission {
         }
 
         companion object {
-            const val GRANTED = "GRANTED"
             const val DENIED = "DENIED"
             const val INVALID = "INVALID"
 
