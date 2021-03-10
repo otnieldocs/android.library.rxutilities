@@ -1,13 +1,21 @@
-package com.otnieldocs
+# RxUtilities
 
-import android.Manifest
-import android.os.Bundle
-import android.util.Log
-import androidx.appcompat.app.AppCompatActivity
-import com.otnieldocs.rxutilities.*
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
+![](https://img.shields.io/badge/version-0.0.1-blue.svg) ![](https://travis-ci.org/joemccann/dillinger.svg?branch=master) 
 
+RxUtilities contained rx-wrapped utils such as simplifying permission request, throttling click action, accessing local data, etc.
+
+### Installation
+TODO : Will publish this library to public maven repository
+
+### Available Utils
+Here are current RxUtilities available so far
+
+#### 1. RxPermission
+Simplifying permission request implementation by utilise rxjava observable. Support  permission contract for android SDK >= 23 and < 23.
+Permission rationale dialog is supported for SDK >= 23.
+##### How to use
+
+```
 class RxPermissionActivity : AppCompatActivity() {
     private val disposable = CompositeDisposable()
 
@@ -53,3 +61,4 @@ class RxPermissionActivity : AppCompatActivity() {
         disposable.add(subscribed)
     }
 }
+```
