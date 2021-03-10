@@ -1,4 +1,4 @@
-package com.otnieldocs.rxutilities
+package com.otnieldocs.rxutilities.permission
 
 import java.lang.Exception
 

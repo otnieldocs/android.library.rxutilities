@@ -1,3 +1,3 @@
-package com.otnieldocs.rxutilities
+package com.otnieldocs.rxutilities.permission
 
 data class RxPermissionRequest(val permission: String = "")

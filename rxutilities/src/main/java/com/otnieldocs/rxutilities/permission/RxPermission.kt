@@ -1,4 +1,4 @@
-package com.otnieldocs.rxutilities
+package com.otnieldocs.rxutilities.permission
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import com.otnieldocs.rxutilities.*
 import io.reactivex.Observable
 import io.reactivex.subjects.ReplaySubject
 
@@ -20,7 +21,10 @@ class RxPermission {
         activity: AppCompatActivity
     ): Observable<RxResult<List<String>>> {
         val fragmentManager = activity.supportFragmentManager
-        val fragment = HeadlessFragment.newInstance(requests)
+        val fragment =
+            HeadlessFragment.newInstance(
+                requests
+            )
         fragmentManager.beginTransaction().add(fragment, HeadlessFragment::class.java.simpleName)
             .commitNow()
         return fragment.getPublisher()
@@ -44,11 +48,22 @@ class RxPermission {
                 }
 
                 if (permissionSuccess.isNotEmpty()) {
-                    publisher.onNext(Granted(permissionSuccess))
+                    publisher.onNext(
+                        Granted(
+                            permissionSuccess
+                        )
+                    )
                 }
 
                 if (permissionDenied.isNotEmpty()) {
-                    publisher.onNext(Denied(RxPermissionException(DENIED, permissionDenied)))
+                    publisher.onNext(
+                        Denied(
+                            RxPermissionException(
+                                DENIED,
+                                permissionDenied
+                            )
+                        )
+                    )
                 }
 
                 publisher.onComplete()
@@ -87,7 +102,11 @@ class RxPermission {
             val shouldRequested = mutableListOf<RxPermissionRequest>()
             for (request in requests) {
                 when {
-                    requests.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
+                    requests.isEmpty() -> publisher.onError(
+                        RxPermissionException(
+                            INVALID
+                        )
+                    )
 
                     ContextCompat.checkSelfPermission(
                         context,
@@ -107,7 +126,11 @@ class RxPermission {
             }
 
             if (permissionSuccess.isNotEmpty()) {
-                publisher.onNext(Granted(permissionSuccess))
+                publisher.onNext(
+                    Granted(
+                        permissionSuccess
+                    )
+                )
                 publisher.onComplete()
             }
 
@@ -143,7 +166,11 @@ class RxPermission {
             val shouldRequested = mutableListOf<RxPermissionRequest>()
             for (request in requestedPermissions) {
                 when {
-                    requestedPermissions.isEmpty() -> publisher.onError(RxPermissionException(INVALID))
+                    requestedPermissions.isEmpty() -> publisher.onError(
+                        RxPermissionException(
+                            INVALID
+                        )
+                    )
 
                     ContextCompat.checkSelfPermission(
                         context,
@@ -159,7 +186,11 @@ class RxPermission {
             }
 
             if (permissionSuccess.isNotEmpty()) {
-                publisher.onNext(Granted(permissionSuccess))
+                publisher.onNext(
+                    Granted(
+                        permissionSuccess
+                    )
+                )
             }
 
             publisher.onComplete()
@@ -185,7 +216,9 @@ class RxPermission {
             fun newInstance(
                 requests: List<RxPermissionRequest>
             ): HeadlessFragment =
-                HeadlessFragment(requests)
+                HeadlessFragment(
+                    requests
+                )
         }
     }
 }

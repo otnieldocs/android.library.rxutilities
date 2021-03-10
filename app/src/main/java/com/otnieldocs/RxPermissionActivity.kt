@@ -4,7 +4,7 @@ import android.Manifest
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.otnieldocs.rxutilities.*
+import com.otnieldocs.rxutilities.permission.*
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 
