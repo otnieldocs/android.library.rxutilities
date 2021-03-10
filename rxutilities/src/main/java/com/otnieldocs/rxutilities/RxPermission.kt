@@ -115,9 +115,9 @@ class RxPermission {
                 val rationaleMessage = getRationaleMessage(requestRationale)
 
                 AlertDialog.Builder(context).apply {
-                    setMessage("You should allow these permissions:\n${rationaleMessage}")
+                    setMessage(getString(R.string.rxutilities_permission_text_rationale, rationaleMessage))
                     setPositiveButton(
-                        "Yes"
+                        getString(R.string.rxutilities_permission_action_yes)
                     ) { _, _ ->
                         launchPermissionLauncher(requestedPermissions)
                     }
