@@ -24,14 +24,8 @@ class RxPermissionActivity : AppCompatActivity() {
         setContentView(R.layout.activity_rx_permission)
 
         val requestPermission = listOf(
-            RxPermissionRequest(
-                permission = Manifest.permission.CAMERA,
-                rationaleMessage = "You need to allow camera permission to use this feature"
-            ),
-            RxPermissionRequest(
-                permission = Manifest.permission.READ_CONTACTS,
-                rationaleMessage = "You need to allow camera permission to use this feature"
-            )
+            RxPermissionRequest(Manifest.permission.CAMERA),
+            RxPermissionRequest(Manifest.permission.READ_CONTACTS)
         )
 
         val permission = RxPermission()
