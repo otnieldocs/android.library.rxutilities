@@ -23,6 +23,7 @@ ext {
     // rxjava dependencies version
     version_rxjava                      = "2.2.8"
     version_rxjava_android              = "2.1.1"
+    version_rxjava_binding              = "4.0.0"
 
     // androidx additional dependencies version
     version_androidx_activity           = "1.2.0"

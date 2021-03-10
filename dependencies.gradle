@@ -17,7 +17,11 @@ ext {
 
     rxjava = [
             rxJava: ("io.reactivex.rxjava2:rxjava:$version_rxjava"),
-            rxJavaAndroid: ("io.reactivex.rxjava2:rxandroid:$version_rxjava_android")
+            rxJavaAndroid: ("io.reactivex.rxjava2:rxandroid:$version_rxjava_android"),
+            rxJavaBinding: ("com.jakewharton.rxbinding4:rxbinding:$version_rxjava_binding"),
+            rxJavaBindingCore: ("com.jakewharton.rxbinding4:rxbinding-core:$version_rxjava_binding"),
+            rxJavaBindingAppCompat: ("com.jakewharton.rxbinding4:rxbinding-appcompat:$version_rxjava_binding"),
+            rxJavaBindingMaterial: ("com.jakewharton.rxbinding4:rxbinding-material:$version_rxjava_binding")
     ]
 
     androidxadd = [

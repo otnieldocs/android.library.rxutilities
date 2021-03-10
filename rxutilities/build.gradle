@@ -46,6 +46,10 @@ dependencies {
 
     implementation rxjava.rxJava
     implementation rxjava.rxJavaAndroid
+    implementation rxjava.rxJavaBinding
+    implementation rxjava.rxJavaBindingCore
+    implementation rxjava.rxJavaBindingAppCompat
+    implementation rxjava.rxJavaBindingMaterial
 
     implementation androidxadd.xactivity
     implementation androidxadd.xfragment

@@ -14,7 +14,7 @@ Here are current RxUtilities available so far
 Simplifying permission request implementation by utilise rxjava observable. Support  permission contract for android SDK >= 23 and < 23.
 Permission rationale dialog is supported for SDK >= 23.
 ##### How to use
-
+Below is the sample code to show how to use the `RxPermission`
 ```
 class RxPermissionActivity : AppCompatActivity() {
     private val disposable = CompositeDisposable()
@@ -54,5 +54,20 @@ class RxPermissionActivity : AppCompatActivity() {
 
         disposable.add(subscribed)
     }
+}
+```
+#### 2. Rx Click Event
+Rx click event consist of 2 types: throttleClick, and debounceClick.
+`throttleClick` will emit click event, invoke the first emitted one, and will do another invocation afterthe first one completed and passing the specified time window.
+`debounceClick` will emit click event, and only able to do other invocation after passing the timeout.
+#### How to Use
+This code below is how to use throttleClick and debounceClick.
+```
+btn_rx_throttle.clickThrottle {
+    Log.d("EVENT_CLICK", "Clicked emitted at ${Date().time}")
+}
+
+btn_rx_debounce.clickDebounce {
+    Log.d("EVENT_CLICK", "Clicked emitted at ${Date().time}")
 }
 ```
