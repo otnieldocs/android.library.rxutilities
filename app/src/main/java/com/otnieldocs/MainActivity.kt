@@ -26,6 +26,10 @@ class MainActivity : AppCompatActivity() {
         btn_rx_throttle.clickThrottle {
             Log.d("EVENT_CLICK", "Clicked emitted at ${Date().time}")
         }
+
+        btn_rx_file.setOnClickListener {
+            startActivity(Intent(this, RxFileActivity::class.java))
+        }
     }
 
 }

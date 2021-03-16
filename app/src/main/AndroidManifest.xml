@@ -16,7 +16,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Androidlibraryrxutilities">
-        <activity android:name=".RxPermissionActivity"></activity>
+        <activity android:name=".RxFileActivity"></activity>
+        <activity android:name=".RxPermissionActivity" />
         <activity android:name=".NormalPermissionActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>
