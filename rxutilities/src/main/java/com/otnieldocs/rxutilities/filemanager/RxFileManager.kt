@@ -1,41 +1,132 @@
 package com.otnieldocs.rxutilities.filemanager
 
+import android.content.ContentValues
+import android.content.Context
 import android.net.Uri
+import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import com.otnieldocs.rxutilities.filemanager.RxFileManager.HeadlessFragment.Companion.REQ_SELECT_FILE
+import com.otnieldocs.rxutilities.filemanager.RxFileManager.HeadlessFragment.Companion.REQ_TAKE_PICTURE
 import io.reactivex.Observable
 import io.reactivex.subjects.ReplaySubject
+import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 
 class RxFileManager {
-    fun selectFile(mimeType: String, activity: AppCompatActivity): Observable<Uri> {
+    fun selectFile(activity: AppCompatActivity): Observable<Uri> {
+        val fragment = buildFragment(activity, REQ_SELECT_FILE, "image/*")
+        return fragment.getUriPublisher()
+    }
+
+    fun takePicture(activity: AppCompatActivity): Observable<Uri> {
+        val fragment = buildFragment(activity, REQ_TAKE_PICTURE, "image/*")
+        return fragment.getUriPublisher()
+    }
+
+    private fun buildFragment(
+        activity: AppCompatActivity,
+        requestType: String, mimeType: String = ""
+    ): HeadlessFragment {
         val fragmentManager = activity.supportFragmentManager
-        val fragment = HeadlessFragment.newSelectImageInstance()
-        fragmentManager.beginTransaction().add(fragment, HeadlessFragment::class.java.simpleName).commitNow()
-        fragment.launchFileLauncher(mimeType)
-        return fragment.getSelectFilePublisher()
+        val fragment = HeadlessFragment.newInstance(requestType, mimeType)
+        fragmentManager.beginTransaction().add(fragment, HeadlessFragment::class.java.simpleName)
+            .commitNow()
+
+        return fragment
     }
 
     class HeadlessFragment : Fragment() {
-        private val selectFilePublisher = ReplaySubject.create<Uri>()
+        private val uriPublisher = ReplaySubject.create<Uri>()
 
-        private val selectFileLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { result: Uri? ->
-            result?.let {
-                selectFilePublisher.onNext(it)
+        private val requestType: String by lazy {
+            arguments?.getString(REQUEST_TYPE) ?: ""
+        }
+
+        private val mimeType: String by lazy {
+            arguments?.getString(MIME_TYPE) ?: ""
+        }
+
+        override fun onCreate(savedInstanceState: Bundle?) {
+            super.onCreate(savedInstanceState)
+
+            when (requestType) {
+                REQ_SELECT_FILE -> launchFileLauncher(mimeType)
+                REQ_TAKE_PICTURE -> context?.let { launchCameraLauncher(it) }
+                else -> {
+                }
             }
-
-            selectFilePublisher.onComplete()
         }
 
-        fun launchFileLauncher(mimeType: String) {
-            selectFileLauncher.launch(mimeType)
+        private fun launchFileLauncher(mimeType: String) {
+            val launcher =
+                registerForActivityResult(ActivityResultContracts.GetContent()) { result: Uri? ->
+                    result?.let {
+                        uriPublisher.onNext(it)
+                    }
+
+                    uriPublisher.onComplete()
+                }
+            launcher.launch(mimeType)
         }
 
-        fun getSelectFilePublisher() = selectFilePublisher
+        private fun launchCameraLauncher(context: Context) {
+            try {
+                val uri = createContentUri(context)
+                val launcher =
+                    registerForActivityResult(ActivityResultContracts.TakePicture()) { isSuccess ->
+                        if (isSuccess) {
+                            uri?.let { uriPublisher.onNext(it) }
+                        } else {
+                            uriPublisher.onError(Exception("Failed to take picture"))
+                        }
+
+                        uriPublisher.onComplete()
+                    }
+
+                launcher.launch(uri)
+            } catch (e: IOException) {
+                with(uriPublisher) {
+                    onError(e)
+                    onComplete()
+                }
+            }
+        }
+
+        private fun createContentUri(context: Context): Uri? {
+            val timeStamp: String =
+                SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, "pict-$timeStamp")
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/*")
+            }
+            val resolver = context.contentResolver
+            val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+            return resolver.insert(contentUri, contentValues)
+        }
+
+        fun getUriPublisher() = uriPublisher
 
         companion object {
+            const val REQUEST_TYPE = "request_type"
+            const val MIME_TYPE = "mime_type"
+            const val REQ_TAKE_PICTURE = "take_picture"
+            const val REQ_SELECT_FILE = "select_file"
+
             @JvmStatic
-            fun newSelectImageInstance() = HeadlessFragment()
+            fun newInstance(type: String, mimeType: String = "") = HeadlessFragment().apply {
+                arguments = Bundle().apply {
+                    putString(REQUEST_TYPE, type)
+                    putString(MIME_TYPE, mimeType)
+                }
+            }
         }
     }
 }
