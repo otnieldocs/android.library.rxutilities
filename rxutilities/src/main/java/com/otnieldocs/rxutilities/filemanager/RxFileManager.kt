@@ -10,6 +10,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import com.otnieldocs.rxutilities.filemanager.RxFileManager.HeadlessFragment.Companion.MIME_CAMERA
+import com.otnieldocs.rxutilities.filemanager.RxFileManager.HeadlessFragment.Companion.MIME_IMAGE
 import com.otnieldocs.rxutilities.filemanager.RxFileManager.HeadlessFragment.Companion.REQ_SELECT_FILE
 import com.otnieldocs.rxutilities.filemanager.RxFileManager.HeadlessFragment.Companion.REQ_TAKE_PICTURE
 import io.reactivex.Observable
@@ -21,12 +23,12 @@ import java.util.*
 
 class RxFileManager {
     fun selectFile(activity: AppCompatActivity): Observable<Uri> {
-        val fragment = buildFragment(activity, REQ_SELECT_FILE, "image/*")
+        val fragment = buildFragment(activity, REQ_SELECT_FILE, MIME_IMAGE)
         return fragment.getUriPublisher()
     }
 
     fun takePicture(activity: AppCompatActivity): Observable<Uri> {
-        val fragment = buildFragment(activity, REQ_TAKE_PICTURE, "image/*")
+        val fragment = buildFragment(activity, REQ_TAKE_PICTURE, MIME_CAMERA)
         return fragment.getUriPublisher()
     }
 
@@ -101,11 +103,11 @@ class RxFileManager {
 
         private fun createContentUri(context: Context): Uri? {
             val timeStamp: String =
-                SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                SimpleDateFormat(TIMESTAMP_PATTERN, Locale.getDefault()).format(Date())
 
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, "pict-$timeStamp")
-                put(MediaStore.MediaColumns.MIME_TYPE, "image/*")
+                put(MediaStore.MediaColumns.MIME_TYPE, MIME_IMAGE)
             }
             val resolver = context.contentResolver
             val contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
@@ -119,6 +121,9 @@ class RxFileManager {
             const val MIME_TYPE = "mime_type"
             const val REQ_TAKE_PICTURE = "take_picture"
             const val REQ_SELECT_FILE = "select_file"
+            const val MIME_IMAGE = "image/*"
+            const val MIME_CAMERA = "image/jpg"
+            const val TIMESTAMP_PATTERN = "yyyyMMdd_HHmmss"
 
             @JvmStatic
             fun newInstance(type: String, mimeType: String = "") = HeadlessFragment().apply {
