@@ -1,0 +1,4 @@
+gpr.usr=<change this to your github username>
+gpr.repo=<change this to your target repo>
+gpr.publishkey=<change this to your git publishing token>
+gpr.readkey=<change this to your git read token>

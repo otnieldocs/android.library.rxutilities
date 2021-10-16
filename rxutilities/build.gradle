@@ -2,6 +2,7 @@ plugins {
     id 'com.android.library'
     id 'kotlin-android'
     id 'kotlin-android-extensions'
+    id 'maven-publish'
 }
 
 apply from: "$rootDir/versions.gradle"
@@ -15,7 +16,7 @@ android {
         minSdkVersion version_min_sdk
         targetSdkVersion version_target_sdk
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -57,4 +58,36 @@ dependencies {
     testImplementation testing.junit
     androidTestImplementation testing.extJunit
     androidTestImplementation testing.espresso
+}
+
+/**
+ * PUBLISHING SECTION
+ */
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
+
+def githubUser  = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
+def githubKey   = githubProperties['gpr.publishkey'] ?: System.getenv("GPR_API_KEY")
+def githubRepo  = githubProperties['gpr.repo'] ?: "android.library.rxutilities"
+
+publishing {
+    publications {
+        release(MavenPublication) {
+            groupId group_id
+            version android.defaultConfig.versionName
+            artifact("$buildDir/outputs/aar/${getArtifactId()}-release.aar")
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/$githubUser/$githubRepo")
+
+            credentials {
+                username = githubUser
+                password = githubKey
+            }
+        }
+    }
 }

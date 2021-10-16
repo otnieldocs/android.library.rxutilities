@@ -1,0 +1,8 @@
+def githubProperties = new Properties()
+githubProperties.load(new FileInputStream(rootProject.file("github.properties")))
+
+ext {
+    githubUser  = githubProperties['gpr.usr'] ?: System.getenv("GPR_USER")
+    githubKey   = githubProperties['gpr.readkey'] ?: System.getenv("GPR_API_KEY")
+    githubRepo  = githubProperties['gpr.repo'] ?: "android.library.rxutilities"
+}

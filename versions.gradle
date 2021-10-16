@@ -1,8 +1,4 @@
 ext {
-    // project dependencies version
-    version_kotlin = "1.3.72"
-    version_gradle = "4.1.1"
-
     // base dependencies version
     version_build_tools                 = "29.0.3"
     version_min_sdk                     = 21
